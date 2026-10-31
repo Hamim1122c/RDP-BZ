@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  windows:
+    image: dockurr/windows:latest
+    container_name: windows
+    # পরিবেশ ভ্যারিয়েবল — তোমার প্রয়োজন অনুযায়ী সংশোধন করবা
+    environment:
+      VERSION: "10"
+      USERNAME: "infinityxbd"
+      PASSWORD: "admin@123"
+      RAM_SIZE: "4G"
+      CPU_CORES: "4"
+      DISK_SIZE: "400G"
+      DISK2_SIZE: "100G"
+    # যদি host থেকে KVM বা tun দরকার হয় (অনেক cloud IDE তে এই ফাইল কাজ নাও করতে পারে)
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    # পোর্ট ম্যাপিং — host:container
+    ports:
+      - "8006:8006"        # noVNC / web UI
+      - "3389:3389/tcp"    # RDP (TCP)
+      - "3389:3389/udp"    # RDP (UDP) — যদি প্রয়োজন
+    # ডাটা পারসিস্টেন্স (host machine এ volume তৈরি হবে)
+    volumes:
+      - windows_disk:/data
+    # পুনরায় শুরু কন্ডিশন
+    restart: unless-stopped
+    # graceful stop সময় বড় রেখে দিচ্ছি (প্রয়জন হলে বাড়াও)
+    stop_grace_period: 2m
+    # (ঐচ্ছিক) কন্ডিশনাল healthcheck — নির্ভর করে image সমর্থন করলে কাজ করবে
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep qemu-system || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  windows_disk:
+    driver: local
